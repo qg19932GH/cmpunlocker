@@ -79,7 +79,7 @@ Surviving kernel updates (on by default):
     cat /var/log/cmpunlocker/rebuild-$(uname -r).log
 
 Memory geometry is selected automatically from PCI device ID:
-  10de:20c2 → 8GB card → 64GB unlock
+  10de:20c2 → 8GB card → 64GiB physical / ~63.25GiB visible
   10de:2082 → 10GB card → 40GB unlock
 
 Multi-GPU and mixed 8GB+10GB systems are supported.
@@ -197,7 +197,7 @@ profile_from_devid() {
 
 expected_mib_for_profile() {
     case "$1" in
-        8gb) echo "65536" ;;
+        8gb) echo "64768" ;;
         10gb) echo "40960" ;;
         *) echo "" ;;
     esac

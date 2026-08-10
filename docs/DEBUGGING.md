@@ -14,7 +14,7 @@ Re-run `sudo ./install.sh` and cold reboot.
 
 ---
 
-## nvidia-smi shows 8192 or 10240 MiB (not 65536 or 40960)
+## nvidia-smi shows 8192 or 10240 MiB (not about 64768 or 40960)
 
 Check that all PLMs show `0xffffffff`:
 

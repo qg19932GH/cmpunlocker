@@ -33,7 +33,7 @@ Below are memory and performance results after applying the unlock:
 sudo ./install.sh
 ```
 
-Then perform a cold reboot (full power off, then boot). The correct memory geometry is selected automatically from the PCI device ID (`0x20C2` = 8GB -> 64GB, `0x2082` = 10GB -> 40GB).
+Then perform a cold reboot (full power off, then boot). The correct memory geometry is selected automatically from the PCI device ID (`0x20C2` = 8GB physical -> ~63.25GiB visible, `0x2082` = 10GB -> 40GB).
 
 ### HBM Memory overclock
 <details>
@@ -81,7 +81,7 @@ sudo ./install.sh --no-iommu
 <details> 
 <summary> Surviving Kernel Updates </summary>
 
-The patched modules are built against one specific kernel. Without help, the first kernel update leaves the card on the stock driver — reporting 8GB instead of 64GB — or on nouveau. The installer wires the rebuild into the kernel update path by default, so this does not happen.
+The patched modules are built against one specific kernel. Without help, the first kernel update leaves the card on the stock driver — reporting 8GB instead of ~63.25GiB — or on nouveau. The installer wires the rebuild into the kernel update path by default, so this does not happen.
 
 A new kernel triggers a rebuild through the package manager hook for your distro, **before** you reboot:
 
@@ -127,7 +127,7 @@ Everything above is undone by `./remove.sh --yes`.
 After install and cold reboot:
 
 ```bash
-# Memory — 8GB card should show 65536 MiB, 10GB card 40960 MiB
+# Memory — 8GB card should show about 64768 MiB, 10GB card 40960 MiB
 nvidia-smi --query-gpu=index,memory.total,pci.bus_id --format=csv
 
 # Unlock logs
@@ -164,7 +164,7 @@ cd benchmark && nvcc -O3 -o nvidia_bench nvidia_bench.cu -lnvidia-ml -ldl \
 | Feature                                                          | Status      |
 |------------------------------------------------------------------|-------------|
 | Full SM compute throughput (SS0/SS1)                             | Working     |
-| Memory geometry (64GB on 8GB cards, 40GB on 10GB cards)          | Working     |
+| Memory geometry (64GiB physical / ~63.25GiB visible on 8GB cards, 40GB on 10GB cards) | Working     |
 | PCIe Gen 2 speeds                                                | Working     |
 | GPU-to-GPU P2P (`cudaDeviceEnablePeerAccess`)                    | In progress |
 | HBM2e memory overclock/downclock                                 | Working     |

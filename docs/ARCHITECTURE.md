@@ -8,7 +8,7 @@ cmpunlocker lifts those clamps during driver initialisation, before GSP boots. N
 
 | | Stock | Unlocked |
 |---|---|---|
-| Memory (`0x20C2`) | 8 GB | 64 GB |
+| Memory (`0x20C2`) | 8 GB | 64 GiB physical / ~63.25 GiB visible |
 | Memory (`0x2082`) | 10 GB | 40 GB |
 | SM speed select | clamped | full |
 | PCIe | Gen1 | Gen2 |
@@ -24,7 +24,7 @@ During GSP bootstrap the driver allocates a *signature* buffer and hands its phy
 
 One Booter Load = one gated write. Rewriting those two slots and running Booter Load again gives the next write, so the gates are opened one at a time in a loop. When the loop is done the real signature is put back and GSP boots on an already-unlocked GPU, seeing nothing unusual.
 
-The payload is loaded from `/lib/firmware/nvidia/ga100/gsp/dmem.bin` when present, otherwise it is generated in place — both produce the same image.
+The payload is loaded from `/var/lib/cmpunlocker/dmem.bin` when present, otherwise it is generated in place — both produce the same image.
 
 ---
 
@@ -69,7 +69,7 @@ Every hook starts with `cmpUnlockIsTarget()`, which matches PCI device ID `0x20C
 `cmpUnlockPreBoot()` runs in the window after the bootstrap is prepared and before GSP is released:
 
 1. Save the WPR2 window (`0x1fa824` / `0x1fa828`) — Booter Load clobbers it and it is restored before every round trip.
-2. Walk the PLM table: 17 entries, each one Booter Load that opens a gate, retried once if the register does not read back as expected.
+2. Walk the PLM table: 18 entries, each one Booter Load that opens a gate, retried once if the register does not read back as expected.
 3. With the gates open, write the SM speed select and memory geometry registers.
 4. Retrain the PCIe link at Gen2.
 5. Restore the stock signature, then call `kgspPopulateWprMeta_HAL()` — the framebuffer size changed underneath, so the WPR layout has to be recomputed.

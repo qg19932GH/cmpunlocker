@@ -34,7 +34,7 @@ After reboot, run the built-in benchmark:
 ./benchmark/nvidia_bench
 ```
 
-This measures memory bandwidth, tensor core throughput, PCIe speed and reports hardware features. An unlocked 8GB card should show ~64 GiB total memory; a 10GB card should show ~40 GiB.
+This measures memory bandwidth, tensor core throughput, PCIe speed and reports hardware features. An unlocked 8GB card has 64 GiB physical HBM and should expose about 63.25 GiB (64768 MiB); a 10GB card should show ~40 GiB.
 
 A pre-built x86-64 binary is included. On aarch64, see the README for the build command.
 

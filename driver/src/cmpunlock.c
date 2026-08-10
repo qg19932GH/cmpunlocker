@@ -752,7 +752,16 @@ cmpUnlockFixStaticInfo(OBJGPU *pGpu, KernelGsp *pKernelGsp)
               "CMPUNLOCK: last region[%u] base=0x%llx limit=0x%llx reserved=0x%llx\n",
               numRegions - 1, pLastRegion->base, pLastRegion->limit, pLastRegion->reserved);
 
-    if (pLastRegion->limit < highLimit)
+    /* Keep the driver-visible region below the reserved physical tail. */
+    if (pLastRegion->base > highLimit)
+    {
+        NV_PRINTF(LEVEL_ERROR,
+                  "CMPUNLOCK: last region base=0x%llx exceeds visible FB limit=0x%llx\n",
+                  pLastRegion->base, highLimit);
+        return;
+    }
+
+    if (pLastRegion->limit != highLimit)
     {
         pLastRegion->limit = highLimit;
         pLastRegion->reserved = pLastRegion->limit - pLastRegion->base + 1;
@@ -1194,12 +1203,16 @@ cmpUnlockLateExtendPma(OBJGPU *pGpu)
     NvU32 candidateIdx = MAX_FB_REGIONS;
     NvU64 pmaFreeBefore = 0, pmaTotalBefore = 0;
     NvU64 pmaFreeAfter = 0, pmaTotalAfter = 0;
+    NvU64 targetFbBytes, highLimit;
     NvU64 heapFree = 0, heapTotal = 0;
     NvU32 i;
     NV_STATUS status;
 
     if (!cmpUnlockIsTarget(pGpu))
         return NV_OK;
+
+    targetFbBytes = _cmpUnlockedFbBytes(pGpu);
+    highLimit = targetFbBytes - 1;
 
     pMemoryManager = GPU_GET_MEMORY_MANAGER(pGpu);
     if (pMemoryManager == NULL)
@@ -1264,7 +1277,8 @@ cmpUnlockLateExtendPma(OBJGPU *pGpu)
     }
 
     pmaRegion.base = NV_MAX(pCandidate->base, CMP_FB_BYTES_STOCK);
-    pmaRegion.limit = pCandidate->limit;
+    /* Never hand the reserved physical tail to the allocator. */
+    pmaRegion.limit = NV_MIN(pCandidate->limit, highLimit);
     pmaRegion.performance = pCandidate->performance;
     pmaRegion.bSupportCompressed = NV_TRUE;
     pmaRegion.bSupportISO = pCandidate->bSupportISO;
@@ -1309,7 +1323,7 @@ cmpUnlockLateExtendPma(OBJGPU *pGpu)
             /* Straddles the stock limit: keep the low half reserved, publish the high half. */
             FB_REGION_DESCRIPTOR publicRegion = *pCandidate;
             publicRegion.base = CMP_FB_BYTES_STOCK;
-            publicRegion.limit = pCandidate->limit;
+            publicRegion.limit = pmaRegion.limit;
             publicRegion.rsvdSize = 0;
             publicRegion.bRsvdRegion = NV_FALSE;
             publicRegion.bInternalHeap = NV_FALSE;
@@ -1324,7 +1338,8 @@ cmpUnlockLateExtendPma(OBJGPU *pGpu)
         }
         else
         {
-            /* Entirely above the stock limit: publish it as-is. */
+            /* Entirely above the stock limit: publish only the safe range. */
+            pCandidate->limit = pmaRegion.limit;
             pCandidate->bRsvdRegion = NV_FALSE;
             pCandidate->rsvdSize = 0;
             pCandidate->bInternalHeap = NV_FALSE;
