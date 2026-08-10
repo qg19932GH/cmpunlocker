@@ -97,7 +97,17 @@
 #define CMP_DMEM_PATH               "/var/lib/cmpunlocker/dmem.bin"
 
 /* Unlocked framebuffer sizes. */
-#define CMP_FB_BYTES_8GB            0x0000001000000000ULL  /* 64GB */
+/*
+ * Safe VRAM tail reservation (buliaoyin patch):
+ * The physical HBM2e is 64 GB, but the last ~768 MB holds GSP firmware
+ * context, ECC page tables and hardware-reserved regions.  Exposing the
+ * full 64 GB to the CUDA allocator lets high-occupancy workloads write
+ * into that tail, causing Xid 79 / CUDA_ERROR_UNKNOWN 999 and a GPU
+ * drop.  Trimming the advertised size to 63.25 GB (0xFD0000000) keeps
+ * those pages out of reach while losing less than 1.2% of capacity.
+ */
+#define CMP_FB_TAIL_RESERVED        0x0000000030000000ULL  /* 768 MB */
+#define CMP_FB_BYTES_8GB            (0x0000001000000000ULL - CMP_FB_TAIL_RESERVED)  /* 63.25 GB */
 #define CMP_FB_BYTES_10GB           0x0000000A00000000ULL  /* 40GB */
 #define CMP_FB_BYTES_STOCK          0x0000000200000000ULL  /*  8GB */
 
